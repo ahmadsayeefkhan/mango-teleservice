@@ -1,6 +1,6 @@
 # mango.com.bd: website rebuild
 
-Production website for **Mango Teleservices Limited**: 37 designed pages (53 generated routes), built with Next.js 16, GSAP and Three.js.
+Production website for **Mango Teleservices Limited**: 37 designed pages (55 generated routes), built with Next.js 16, GSAP and Three.js.
 
 ## Run it
 
