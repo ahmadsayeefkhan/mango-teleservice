@@ -1,0 +1,471 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Mango Teleservices — design tokens (Tailwind v4 @theme)
+   Source of truth: BUILD_BRIEF.md §3 + mango-brand-guidelines/tokens.css
+   ------------------------------------------------------------------ */
+@theme {
+  /* Brand colours */
+  --color-mango: #feca26;
+  --color-mango-deep: #e5ae00;
+  --color-mango-text: #7a5c00;
+  --color-ink: #0e1116;
+  --color-graphite: #1a1f27;
+  --color-paper: #faf8f3;
+  --color-stone: #e8e4da;
+  --color-slate: #5a6472;
+  --color-mist: #9aa3af;
+  --color-signal-green: #23a55a;
+  --color-signal-red: #d93a3a;
+  --color-signal-blue: #2f6feb;
+
+  /* Fonts (CSS variables come from next/font in app/layout.tsx) */
+  --font-display: var(--font-sora), Arial, sans-serif;
+  --font-body: var(--font-dm-sans), Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-dm-sans), Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains), Consolas, "Courier New", monospace;
+  --font-bn: var(--font-hind), "Noto Sans Bengali", sans-serif;
+
+  /* Fluid type scale */
+  --text-hero: clamp(2.75rem, 1.2rem + 5.4vw, 6rem);
+  --text-hero--line-height: 1.05;
+  --text-hero--letter-spacing: -0.03em;
+  --text-h1: clamp(2.25rem, 1.4rem + 3.2vw, 4rem);
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.025em;
+  --text-h2: clamp(1.875rem, 1.2rem + 2.2vw, 3rem);
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h3: clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem);
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.01em;
+  --text-body-l: 1.125rem;
+  --text-body-l--line-height: 1.6;
+  --text-overline: 0.75rem;
+  --text-overline--line-height: 1.2;
+  --text-overline--letter-spacing: 0.12em;
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Layout */
+  --container-content: 1200px;
+
+  /* Shadows: only for floating menus (borders over shadows elsewhere) */
+  --shadow-menu: 0 24px 60px -20px rgb(0 0 0 / 0.55);
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: auto;
+    background: var(--color-paper);
+    /* clip (not hidden) keeps position: sticky working while guaranteeing no horizontal scroll */
+    overflow-x: clip;
+  }
+
+  body {
+    @apply bg-paper text-ink font-body antialiased;
+    font-size: 1rem;
+    line-height: 1.6;
+    min-height: 100%;
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-semibold;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  ::selection {
+    background: var(--color-mango);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal-blue);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  [data-tone="ink"] :focus-visible,
+  [data-tone="graphite"] :focus-visible,
+  .tone-dark :focus-visible {
+    outline-color: var(--color-mango);
+  }
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Utilities
+   ------------------------------------------------------------------ */
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility font-bn {
+  font-family: var(--font-bn);
+}
+
+/* ------------------------------------------------------------------
+   Lenis (inlined from lenis/dist/lenis.css)
+   ------------------------------------------------------------------ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+.lenis.lenis-autoToggle {
+  transition-property: overflow;
+  transition-duration: 1ms;
+  transition-behavior: allow-discrete;
+}
+
+/* ------------------------------------------------------------------
+   Motion robustness
+   `data-motion` is stamped on <html> by an inline script before first
+   paint: "full" when animations will run, "static" for ?static=1 and
+   prefers-reduced-motion. Elements that JS will animate carry `.js-hide`
+   in the server HTML; they are hidden ONLY in full mode, and a CSS
+   fallback makes them visible again after 2.5s if JS never takes over.
+   Components remove `.js-hide` the moment GSAP owns the element.
+   ------------------------------------------------------------------ */
+html[data-motion="full"]:not([data-lite]):not([data-preload]) .js-hide {
+  opacity: 0;
+  animation: mt-fallback 0.6s ease 2.5s forwards;
+}
+/*
+   Two deliberate exceptions to the rule above:
+   - [data-lite] (touch / < lg): nothing is hidden before hydration; motion/lite.ts hides only
+     what is still below the fold once it has measured the page (LCP paints at first paint).
+   - [data-preload]: while the opaque preloader overlay is up, content may paint underneath it,
+     so the browser records the hero image as painted at first paint instead of ~2s later.
+     Components hide their targets with inline styles at hydration, before the overlay lifts.
+   ------------------------------------------------------------------ */
+@keyframes mt-fallback {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Lite tier: below-the-fold sections skip layout + paint until they approach the viewport. The
+   page's first layout was the longest main-thread task on phones (one pass over every section,
+   including eight inline SVG diagrams on /network). Desktop keeps normal rendering because its
+   pinned/scrubbed sections are measured up front by ScrollTrigger. */
+html[data-lite] .cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Lite tier reveals (motion/lite.ts): class-toggled CSS transitions, no per-element ScrollTriggers. */
+.lt-rv {
+  opacity: 0;
+  transform: translateY(var(--lt-y, 28px));
+  transition:
+    opacity var(--lt-dur, 0.9s) var(--ease-out-expo) var(--lt-delay, 0s),
+    transform var(--lt-dur, 0.9s) var(--ease-out-expo) var(--lt-delay, 0s);
+}
+.lt-rv.lt-in {
+  opacity: 1;
+  transform: none;
+}
+.lt-clip {
+  clip-path: var(--lt-clip, inset(0 0 100% 0));
+  transition: clip-path 1.3s var(--ease-out-expo) var(--lt-delay, 0s);
+}
+.lt-clip.lt-in {
+  clip-path: inset(0 0 0 0);
+}
+/* First-viewport (hero) entrance on the lite tier: pure CSS from first paint, never gated on JS. */
+html[data-motion="full"][data-lite] .lt-enter {
+  animation: lt-enter 0.9s var(--ease-out-expo) var(--lt-delay, 0s) both;
+}
+@keyframes lt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* SplitText line masks: keep descenders visible inside the clip box */
+.split-line-mask {
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+/* ------------------------------------------------------------------
+   Preloader (server-rendered shell; only shown when <html data-preload>)
+   ------------------------------------------------------------------ */
+.preloader {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+html[data-preload] .preloader {
+  display: grid;
+  place-items: center;
+  animation: preloader-timeout 0.5s ease 2.8s forwards;
+}
+@keyframes preloader-timeout {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Signature keyframes
+   ------------------------------------------------------------------ */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.marquee-track {
+  animation: marquee var(--marquee-duration, 40s) linear infinite;
+}
+.marquee[data-pause-on-hover="true"]:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* Pulse ring as a transform/opacity pseudo-element (compositor-only) rather than an animated
+   box-shadow, which repaints the dot every frame — there are a dozen of these per page. */
+@layer components {
+  .signal-dot {
+    position: relative;
+  }
+}
+.signal-dot::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  background: rgb(254 202 38 / 0.55);
+  pointer-events: none;
+  animation: signal-pulse 2.4s ease-out infinite;
+}
+@keyframes signal-pulse {
+  0% {
+    transform: scale(0.38);
+    opacity: 1;
+  }
+  60%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes status-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.status-dot {
+  animation: status-blink 2s ease-in-out infinite;
+}
+
+@keyframes bar-level {
+  0%,
+  100% {
+    transform: scaleY(var(--bar-min, 0.35));
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.signal-bar {
+  transform-origin: bottom;
+  animation: bar-level var(--bar-duration, 1.6s) ease-in-out infinite;
+  animation-delay: var(--bar-delay, 0s);
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+.scroll-cue-line {
+  animation: scroll-cue 2.2s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+
+/* Static mode + reduced motion: freeze decorative loops */
+html[data-motion="static"] .marquee-track,
+html[data-motion="static"] .signal-dot::after,
+html[data-motion="static"] .status-dot,
+html[data-motion="static"] .signal-bar,
+html[data-motion="static"] .scroll-cue-line {
+  animation: none;
+}
+html[data-motion="static"] .signal-dot::after {
+  opacity: 0;
+}
+html[data-motion="static"] .signal-bar {
+  transform: scaleY(var(--bar-min, 0.35));
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .signal-dot::after,
+  .status-dot,
+  .signal-bar,
+  .scroll-cue-line {
+    animation: none !important;
+  }
+  .signal-dot::after {
+    opacity: 0;
+  }
+}
+
+/* Home services story: in static mode the stack collapses to a plain flow (no vh spacing / sticky) */
+html[data-motion="static"] .story-wrap {
+  min-height: 0 !important;
+}
+html[data-motion="static"] .story-sticky {
+  position: static !important;
+}
+@media (min-width: 1024px) {
+  html[data-motion="static"] .story-wrap + .story-wrap {
+    margin-top: 1.25rem;
+  }
+}
+
+/* Route diagram connectors */
+.route-path {
+  fill: none;
+  stroke: rgb(154 163 175 / 0.45);
+  stroke-width: 1.5;
+}
+
+/* ------------------------------------------------------------------
+   Solutions area (moved here from solutions.module.css: a CSS module is a
+   second render-blocking stylesheet on every solutions page; these few
+   rules cost nothing in the shared file)
+   ------------------------------------------------------------------ */
+/* Capability card spotlight: a soft Mango radial that follows the pointer (vars set by JS). */
+.sol-spot {
+  --sx: 50%;
+  --sy: 50%;
+}
+.sol-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(220px circle at var(--sx) var(--sy), rgb(254 202 38 / 0.16), transparent 70%);
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-motion="full"] .sol-spot:hover::before {
+    opacity: 1;
+  }
+}
+/* Cloud estimator range inputs (track colour is painted inline as a gradient). */
+.sol-range {
+  outline-offset: 4px;
+}
+.sol-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #feca26;
+  border: 3px solid #1a1f27;
+  box-shadow: 0 0 0 1px rgb(254 202 38 / 0.6);
+  cursor: grab;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sol-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #feca26;
+  border: 3px solid #1a1f27;
+  box-shadow: 0 0 0 1px rgb(254 202 38 / 0.6);
+  cursor: grab;
+}
+.sol-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+  cursor: grabbing;
+}
+.sol-range::-moz-range-track {
+  background: transparent;
+}
+
+/* Hide the numeric spinner etc. in dark inputs (used by page builders) */
+[data-tone="ink"] input,
+[data-tone="ink"] select,
+[data-tone="ink"] textarea {
+  color-scheme: dark;
+}
